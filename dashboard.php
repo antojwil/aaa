@@ -2,11 +2,12 @@
 session_start();
 if (!isset($_SESSION["user"])) {
    header("Location: login.php");
+   exit; // Make sure to exit after redirecting
 }
 
 // Retrieve user information from the session
 $user = $_SESSION["user"];
-?>  
+?>
 
 <!DOCTYPE html>
 <html lang="en">
@@ -20,6 +21,23 @@ $user = $_SESSION["user"];
         /* Add this style to remove white border */
         .wrapper {
             border: none; /* Remove border */
+        }
+        /* Style for the review table */
+        #review-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        #review-table th, #review-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        #review-table th {
+            background-color: #f2f2f2;
+        }
+        /* Hide review table initially */
+        #review-container {
+            display: none;
         }
     </style>
 </head>
@@ -36,12 +54,13 @@ $user = $_SESSION["user"];
             <li><a href="#" onclick="loadCurrentRiskTrends()"><i class="fas fa-atom"></i>Current risk trends</a></li>
             <li><a href="#" onclick="viewSubmittedRisks()"><i class="fab fa-expeditedssl"></i> Submitted Risks</a></li>
             <li><a href="#" onclick="loadPlanMitigation()"><i class="fas fa-tasks"></i> View Mitigation</a></li>
+            <li><a href="#" onclick="loadReview()"><i class="fas fa-star"></i> Review</a></li> <!-- New "Review" link -->
             <li><a href="logout.php"><i class="fas fa-sign-out-alt"></i>Logout</a></li>
         </ul> 
     </div>
-    <div class="main_content">
+    <div class="main_content" id="main_content">
         <div class="header">
-            <div>Welcome, <?php echo $user["full_name"]; ?></div>
+            <div>Welcome, <?php echo isset($user["full_name"]) ? $user["full_name"] : ""; ?></div>
             <!-- Other header content -->
         </div>  
         <div class="info" id="form-container">
@@ -56,6 +75,12 @@ $user = $_SESSION["user"];
         <div class="info" id="approved-mitigation-container" style="display:none;">
             <!-- Approved mitigation plans content will be loaded here -->
         </div>
+        <div id="review-container">
+            <!-- Review table container -->
+            <div id="review-content">
+                <!-- Review table content will be loaded here -->
+            </div>
+        </div>
     </div>
 </div>
 
@@ -67,9 +92,7 @@ $user = $_SESSION["user"];
         // Display the form container
         document.getElementById("form-container").style.display = "block";
         // Hide other containers if visible
-        document.getElementById("submitted-risks-container").style.display = "none";
-        document.getElementById("plan-mitigation-container").style.display = "none";
-        document.getElementById("approved-mitigation-container").style.display = "none";
+        hideOtherContainers("form-container");
     }
 
     // JavaScript to handle opening/closing the submitted risks
@@ -79,9 +102,7 @@ $user = $_SESSION["user"];
         // Display the submitted risks container
         document.getElementById("submitted-risks-container").style.display = "block";
         // Hide other containers if visible
-        document.getElementById("form-container").style.display = "none";
-        document.getElementById("plan-mitigation-container").style.display = "none";
-        document.getElementById("approved-mitigation-container").style.display = "none";
+        hideOtherContainers("submitted-risks-container");
     }
 
     // JavaScript function to load approved mitigation
@@ -91,9 +112,7 @@ $user = $_SESSION["user"];
         // Display the plan mitigation container
         document.getElementById("plan-mitigation-container").style.display = "block";
         // Hide other containers if visible
-        document.getElementById("form-container").style.display = "none";
-        document.getElementById("submitted-risks-container").style.display = "none";
-        document.getElementById("approved-mitigation-container").style.display = "none";
+        hideOtherContainers("plan-mitigation-container");
     }
 
     function loadCurrentRiskTrends() {
@@ -105,44 +124,29 @@ $user = $_SESSION["user"];
         document.getElementById("approved-mitigation-container").style.display = "none";
         // Display the form container
         document.getElementById("form-container").style.display = "block";
+    
+    }
+
+    // Function to load the review table content
+    function loadReview() {
+        // Show the review container and hide other content
+        document.getElementById("review-container").style.display = "block";
+        hideOtherContainers("review-container");
+
+        // Load dynamic data into the review table
+        $("#review-content").load("fetch-review.php");
+    }
+
+    // Function to hide other containers except the specified one
+    function hideOtherContainers(exceptContainerId) {
+        var containers = document.querySelectorAll(".info, #review-container");
+        containers.forEach(function(container) {
+            if (container.id !== exceptContainerId) {
+                container.style.display = "none";
+            }
+        });
     }
 </script>
-
-<!-- Place this JavaScript code inside the <script> tag in dashboard.php -->
-
-<script>
-    // Function to load approved mitigation plans content
-    function loadApprovedMitigation() {
-        // Load approved mitigation content using jQuery AJAX
-        $("#approved-mitigation-container").load("get-approved-mitigation.php");
-        // Display the approved mitigation container
-        $("#approved-mitigation-container").show();
-        // Hide other containers if visible
-        $("#submitted-risks-container, #form-container, #plan-mitigation-container").hide();
-    }
-
-    // Function to toggle the visibility of the approved mitigation container
-    function toggleApprovedMitigation() {
-        // Toggle visibility of the approved mitigation container
-        $("#approved-mitigation-container").toggle();
-        // Hide other containers if visible
-        $("#submitted-risks-container, #form-container, #plan-mitigation-container").hide();
-    }
-
-    $(document).ready(function() {
-        // Event handler for the "Approved Mitigation" link click
-        $("#btn-approved-mitigation").click(function() {
-            loadApprovedMitigation(); // Load approved mitigation plans content
-        });
-
-        // Event handler for toggling the visibility of the approved mitigation container
-        $("#btn-toggle-approved-mitigation").click(function() {
-            toggleApprovedMitigation(); // Toggle visibility of the approved mitigation container
-        });
-    });
-</script>
-
-
 
 </body>
 </html>
